@@ -28,27 +28,18 @@
     
     HKQuantityType *stepCountType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierStepCount];
     HKUnit *stepsUnit = [HKUnit countUnit];
+    NSPredicate *predicate = [RCTAppleHealthKit predicateForSamplesBetweenDates:startDate endDate:endDate];
+    NSUInteger limit = [RCTAppleHealthKit uintFromOptions:input key:@"limit" withDefault:HKObjectQueryNoLimit];
+    BOOL ascending = [RCTAppleHealthKit boolFromOptions:input key:@"ascending" withDefault:false];
     
-    
-    [self fetchSumOfSamplesInRangeForType:stepCountType
-                                     unit:stepsUnit
-                                startDate:startDate
-                                  endDate:endDate
-                               completion:^(double value, NSDate *startDate, NSDate *endDate, NSError *error) {
-                                   if (!value) {
-                                       NSLog(@"could not fetch step count for day: %@", error);
-                                       callback(@[RCTMakeError(@"could not fetch step count for day", error, nil)]);
-                                       return;
-                                   }
-                                   
-                                   NSDictionary *response = @{
-                                                              @"value" : @(value),
-                                                              @"startDate" : [RCTAppleHealthKit buildISO8601StringFromDate:startDate],
-                                                              @"endDate" : [RCTAppleHealthKit buildISO8601StringFromDate:endDate],
-                                                              };
-                                   
-                                   callback(@[[NSNull null], response]);
-                               }];
+    [self fetchQuantitySamplesOfType:stepCountType unit:stepsUnit predicate:predicate ascending:ascending limit:limit completion:^(NSArray *results, NSError *error) {
+        if (error) {
+            callback(@[RCTMakeError(@"could not fetch step count", error, nil)]);
+            return;
+        }
+        
+        callback(@[[NSNull null], results]);
+    }];
 }
 
 
